@@ -11,6 +11,9 @@ type Config struct {
 	Labels         map[string]string `json:"labels"`
 	NamesConfig    NamesConfigSpec   `json:"names"`
 	LogLevel       plog.LogLevel     `json:"logLevel"`
+	// TODO int vs int64? Should double check Go conventions.
+	// TODO is the *int the idiomatic way?
+	ListenPort *int `json:"listenPort"`
 }
 
 // NamesConfigSpec configures the names of some Kubernetes resources for the Supervisor.

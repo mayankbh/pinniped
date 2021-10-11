@@ -171,6 +171,7 @@ func (a *App) runServer(ctx context.Context) error {
 		scheme,
 		loginGV,
 		identityGV,
+		*cfg.ListenPort,
 	)
 	if err != nil {
 		return fmt.Errorf("could not configure aggregated API server: %w", err)
@@ -195,6 +196,7 @@ func getAggregatedAPIServerConfig(
 	apiGroupSuffix string,
 	scheme *runtime.Scheme,
 	loginConciergeGroupVersion, identityConciergeGroupVersion schema.GroupVersion,
+	listenPort int,
 ) (*apiserver.Config, error) {
 	codecs := serializer.NewCodecFactory(scheme)
 
@@ -207,7 +209,7 @@ func getAggregatedAPIServerConfig(
 	)
 	recommendedOptions.Etcd = nil // turn off etcd storage because we don't need it yet
 	recommendedOptions.SecureServing.ServerCert.GeneratedCert = dynamicCertProvider
-	recommendedOptions.SecureServing.BindPort = 8443 // Don't run on default 443 because that requires root
+	recommendedOptions.SecureServing.BindPort = listenPort // Don't run on default 443 because that requires root. The default is 8443.
 
 	serverConfig := genericapiserver.NewRecommendedConfig(codecs)
 	// Note that among other things, this ApplyTo() function copies

@@ -6,16 +6,22 @@
 package supervisor
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"strings"
 
+	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/yaml"
 
 	"go.pinniped.dev/internal/constable"
 	"go.pinniped.dev/internal/groupsuffix"
 	"go.pinniped.dev/internal/plog"
+)
+
+const (
+	defaultSupervisorListenPort = 8443
 )
 
 // FromPath loads an Config from a provided local file path, inserts any
@@ -37,6 +43,7 @@ func FromPath(path string) (*Config, error) {
 	}
 
 	maybeSetAPIGroupSuffixDefault(&config.APIGroupSuffix)
+	maybeSetListenPort(&config.ListenPort)
 
 	if err := validateAPIGroupSuffix(*config.APIGroupSuffix); err != nil {
 		return nil, fmt.Errorf("validate apiGroupSuffix: %w", err)
@@ -50,12 +57,22 @@ func FromPath(path string) (*Config, error) {
 		return nil, fmt.Errorf("validate log level: %w", err)
 	}
 
+	if err := validatePort(*config.ListenPort); err != nil {
+		return nil, fmt.Errorf("validate listenPort: %w", err)
+	}
+
 	return &config, nil
 }
 
 func maybeSetAPIGroupSuffixDefault(apiGroupSuffix **string) {
 	if *apiGroupSuffix == nil {
 		*apiGroupSuffix = pointer.StringPtr(groupsuffix.PinnipedDefaultSuffix)
+	}
+}
+
+func maybeSetListenPort(listenPort **int) {
+	if *listenPort == nil {
+		*listenPort = pointer.IntPtr(defaultSupervisorListenPort)
 	}
 }
 
@@ -70,6 +87,13 @@ func validateNames(names *NamesConfigSpec) error {
 	}
 	if len(missingNames) > 0 {
 		return constable.Error("missing required names: " + strings.Join(missingNames, ", "))
+	}
+	return nil
+}
+
+func validatePort(listenPort int) error {
+	if result := validation.IsValidPortNum(listenPort); result != nil {
+		return errors.New(strings.Join(result, " "))
 	}
 	return nil
 }

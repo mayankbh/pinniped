@@ -393,7 +393,7 @@ func runSupervisor(podInfo *downward.PodInfo, cfg *supervisor.Config) error {
 	startServer(ctx, shutdown, httpListener, oidProvidersManager)
 
 	//nolint: gosec // Intentionally binding to all network interfaces.
-	httpsListener, err := tls.Listen("tcp", ":8443", &tls.Config{
+	httpsListener, err := tls.Listen("tcp", fmt.Sprintf(":%d", *cfg.ListenPort), &tls.Config{
 		MinVersion: tls.VersionTLS12, // Allow v1.2 because clients like the default `curl` on MacOS don't support 1.3 yet.
 		GetCertificate: func(info *tls.ClientHelloInfo) (*tls.Certificate, error) {
 			cert := dynamicTLSCertProvider.GetTLSCert(strings.ToLower(info.ServerName))

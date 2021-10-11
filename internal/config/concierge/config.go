@@ -6,10 +6,12 @@
 package concierge
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"strings"
 
+	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/yaml"
 
@@ -21,6 +23,8 @@ import (
 const (
 	aboutAYear   = 60 * 60 * 24 * 365
 	about9Months = 60 * 60 * 24 * 30 * 9
+
+	defaultConciergeListenPort = 8443
 )
 
 // FromPath loads an Config from a provided local file path, inserts any
@@ -44,6 +48,7 @@ func FromPath(path string) (*Config, error) {
 	maybeSetAPIDefaults(&config.APIConfig)
 	maybeSetAPIGroupSuffixDefault(&config.APIGroupSuffix)
 	maybeSetKubeCertAgentDefaults(&config.KubeCertAgentConfig)
+	maybeSetListenPort(&config.ListenPort)
 
 	if err := validateAPI(&config.APIConfig); err != nil {
 		return nil, fmt.Errorf("validate api: %w", err)
@@ -55,6 +60,10 @@ func FromPath(path string) (*Config, error) {
 
 	if err := validateNames(&config.NamesConfig); err != nil {
 		return nil, fmt.Errorf("validate names: %w", err)
+	}
+
+	if err := validatePort(*config.ListenPort); err != nil {
+		return nil, fmt.Errorf("validate listenPort: %w", err)
 	}
 
 	if err := plog.ValidateAndSetLogLevelGlobally(config.LogLevel); err != nil {
@@ -91,6 +100,12 @@ func maybeSetKubeCertAgentDefaults(cfg *KubeCertAgentSpec) {
 
 	if cfg.Image == nil {
 		cfg.Image = pointer.StringPtr("debian:latest")
+	}
+}
+
+func maybeSetListenPort(listenPort **int) {
+	if *listenPort == nil {
+		*listenPort = pointer.IntPtr(defaultConciergeListenPort)
 	}
 }
 
@@ -146,4 +161,11 @@ func validateAPI(apiConfig *APIConfigSpec) error {
 
 func validateAPIGroupSuffix(apiGroupSuffix string) error {
 	return groupsuffix.Validate(apiGroupSuffix)
+}
+
+func validatePort(listenPort int) error {
+	if result := validation.IsValidPortNum(listenPort); result != nil {
+		return errors.New(strings.Join(result, " "))
+	}
+	return nil
 }

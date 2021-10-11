@@ -54,6 +54,7 @@ func TestFromPath(t *testing.T) {
 				  image: kube-cert-agent-image
 				  imagePullSecrets: [kube-cert-agent-image-pull-secret]
 				logLevel: debug
+				listenPort: 1234
 			`),
 			wantConfig: &Config{
 				DiscoveryInfo: DiscoveryInfoSpec{
@@ -86,7 +87,8 @@ func TestFromPath(t *testing.T) {
 					Image:            pointer.StringPtr("kube-cert-agent-image"),
 					ImagePullSecrets: []string{"kube-cert-agent-image-pull-secret"},
 				},
-				LogLevel: plog.LevelDebug,
+				LogLevel:   plog.LevelDebug,
+				ListenPort: pointer.IntPtr(1234),
 			},
 		},
 		{
@@ -131,6 +133,7 @@ func TestFromPath(t *testing.T) {
 					NamePrefix: pointer.StringPtr("pinniped-kube-cert-agent-"),
 					Image:      pointer.StringPtr("debian:latest"),
 				},
+				ListenPort: pointer.IntPtr(defaultConciergeListenPort),
 			},
 		},
 		{
@@ -341,6 +344,25 @@ func TestFromPath(t *testing.T) {
 				  impersonationSignerSecret: impersonationSignerSecret-value
 			`),
 			wantError: "validate api: renewBefore must be positive",
+		},
+		{
+			name: "InvalidPort",
+			yaml: here.Doc(`
+				---
+				names:
+				  servingCertificateSecret: pinniped-concierge-api-tls-serving-certificate
+				  credentialIssuer: pinniped-config
+				  apiService: pinniped-api
+				  impersonationLoadBalancerService: impersonationLoadBalancerService-value
+				  impersonationClusterIPService: impersonationClusterIPService-value
+				  impersonationTLSCertificateSecret: impersonationTLSCertificateSecret-value
+				  impersonationCACertificateSecret: impersonationCACertificateSecret-value
+				  impersonationSignerSecret: impersonationSignerSecret-value
+				  agentServiceAccount: agentServiceAccount-value
+				listenPort: -1000
+				
+			`),
+			wantError: "validate listenPort: must be between 1 and 65535, inclusive",
 		},
 		{
 			name: "InvalidAPIGroupSuffix",

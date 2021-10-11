@@ -14,6 +14,7 @@ type Config struct {
 	KubeCertAgentConfig KubeCertAgentSpec `json:"kubeCertAgent"`
 	Labels              map[string]string `json:"labels"`
 	LogLevel            plog.LogLevel     `json:"logLevel"`
+	ListenPort          *int              `json:"listenPort,omitempty"`
 }
 
 // DiscoveryInfoSpec contains configuration knobs specific to

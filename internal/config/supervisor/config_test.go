@@ -32,6 +32,7 @@ func TestFromPath(t *testing.T) {
 				  myLabelKey2: myLabelValue2
 				names:
 				  defaultTLSCertificateSecret: my-secret-name
+				listenPort: 12345
 			`),
 			wantConfig: &Config{
 				APIGroupSuffix: pointer.StringPtr("some.suffix.com"),
@@ -42,6 +43,7 @@ func TestFromPath(t *testing.T) {
 				NamesConfig: NamesConfigSpec{
 					DefaultTLSCertificateSecret: "my-secret-name",
 				},
+				ListenPort: pointer.IntPtr(12345),
 			},
 		},
 		{
@@ -57,6 +59,7 @@ func TestFromPath(t *testing.T) {
 				NamesConfig: NamesConfigSpec{
 					DefaultTLSCertificateSecret: "my-secret-name",
 				},
+				ListenPort: pointer.IntPtr(8443),
 			},
 		},
 		{
@@ -75,6 +78,16 @@ func TestFromPath(t *testing.T) {
 				  defaultTLSCertificateSecret: my-secret-name
 			`),
 			wantError: "validate apiGroupSuffix: a lowercase RFC 1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character (e.g. 'example.com', regex used for validation is '[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*')",
+		},
+		{
+			name: "when an invalid port is provided",
+			yaml: here.Doc(`
+				---
+				names:
+				  defaultTLSCertificateSecret: my-secret-name
+				listenPort: 2000000
+			`),
+			wantError: "validate listenPort: must be between 1 and 65535, inclusive",
 		},
 	}
 	for _, test := range tests {
